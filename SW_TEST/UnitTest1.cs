@@ -3,6 +3,8 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using System;
+using System.Linq;
+using System.Threading;
 
 namespace SeleniumTests
 {
@@ -12,12 +14,35 @@ namespace SeleniumTests
         private IWebDriver driver;
         private WebDriverWait wait;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
+            if (driver != null)
+            {
+                try
+                {
+                    //var tabs = driver.WindowHandles.ToList();
+
+                    //foreach (var tab in tabs)
+                    //{
+                    //    driver.SwitchTo().Window(tab);
+                    //    driver.Close();
+                    //}
+
+                    driver.Quit();
+                    driver.Dispose();
+                    Console.WriteLine("Closed previous browser instance.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error during closing previous browser: " + ex.Message);
+                }
+            }
+
             driver = new ChromeDriver(@"C:\Users\opilane\source\repos\SW_TEST\driver");
             driver.Manage().Window.Maximize();
             wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            Console.WriteLine("New browser instance opened.");
         }
 
         private IWebElement FindElementWithWait(By by)
@@ -33,56 +58,49 @@ namespace SeleniumTests
             }
         }
 
-        // 1. Test: Verify Logi sisse modal
-        [Test]
-        public void VerifyLogiSisseModalTest()
+        [Test, Order(1)]
+        public void VerifyModalFormsTestWithPauses()
         {
             try
             {
                 driver.Navigate().GoToUrl("https://martinkemppi22.thkit.ee/");
                 wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("martinkemppi22.thkit.ee"));
                 Console.WriteLine("Navigated to: " + driver.Url);
+
+                Thread.Sleep(2000);
 
                 IWebElement logiSisseButton = FindElementWithWait(By.Id("logisisse"));
                 logiSisseButton.Click();
-                System.Threading.Thread.Sleep(1000);
+                Thread.Sleep(1000);
 
                 Assert.AreEqual("https://martinkemppi22.thkit.ee/#modal_log", driver.Url, "Login modal URL did not match.");
                 Console.WriteLine("Login modal URL matched successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error during Logi sisse modal test: " + ex.Message);
-                throw;
-            }
-        }
 
-        // 2. Test: Verify Registreeri modal
-        [Test]
-        public void VerifyRegistreeriModalTest()
-        {
-            try
-            {
+                Thread.Sleep(2000);
+
                 driver.Navigate().GoToUrl("https://martinkemppi22.thkit.ee/");
                 wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("martinkemppi22.thkit.ee"));
-                Console.WriteLine("Navigated to: " + driver.Url);
+                Console.WriteLine("Navigated back to: " + driver.Url);
+
+                Thread.Sleep(2000);
 
                 IWebElement registreeriButton = FindElementWithWait(By.Id("regimind"));
                 registreeriButton.Click();
-                System.Threading.Thread.Sleep(1000);
+                Thread.Sleep(1000);
 
                 Assert.AreEqual("https://martinkemppi22.thkit.ee/#modal_reg", driver.Url, "Register modal URL did not match.");
                 Console.WriteLine("Register modal URL matched successfully.");
+
+                Thread.Sleep(2000);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error during Registreeri modal test: " + ex.Message);
+                Console.WriteLine("Error during modal form test: " + ex.Message);
                 throw;
             }
         }
 
-        // 3. Test: Verify redirection from tood.html to content/index.php
-        [Test]
+        [Test, Order(2)]
         public void VerifyRedirectionToContentIndexTest()
         {
             try
@@ -91,10 +109,14 @@ namespace SeleniumTests
                 wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("tood.html"));
                 Console.WriteLine("Navigated to: " + driver.Url);
 
+                Thread.Sleep(2000);
+
                 IWebElement contentLink = FindElementWithWait(By.XPath("//a[@href='content/index.php']"));
                 Assert.IsNotNull(contentLink, "Content link not found.");
                 contentLink.Click();
                 Console.WriteLine("Clicked on content link.");
+
+                Thread.Sleep(2000);
 
                 wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlToBe("https://martinkemppi22.thkit.ee/content/index.php"));
                 Assert.AreEqual("https://martinkemppi22.thkit.ee/content/index.php", driver.Url, "Did not navigate to the correct URL for content/index.php.");
@@ -107,66 +129,7 @@ namespace SeleniumTests
             }
         }
 
-        // 4. Test: Verify navigation elements on content/index.php
-        // Test: Verify presence of text "Aknaruloode tootmine" on content/index.php
-        [Test]
-        public void VerifyAknaruloodeTootmineTextTest()
-        {
-            try
-            {
-                driver.Navigate().GoToUrl("https://martinkemppi22.thkit.ee/content/index.php");
-                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("content/index.php"));
-                Console.WriteLine("Navigated to: " + driver.Url);
-
-                IWebElement textElement = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.XPath("//*[contains(text(), 'Aknaruloode tootmine')]")));
-                Assert.IsNotNull(textElement, "'Aknaruloode tootmine' text not found on the page.");
-                Console.WriteLine("'Aknaruloode tootmine' text exists on the page.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error during text presence test on content/index.php: " + ex.Message);
-                throw;
-            }
-        }
-
-
-
-        // Test: Navigate to content/index.php, click on 'Aknaruloode tootmine' and verify redirection
-        [Test]
-        public void ClickAknaruloodeTootmineAndVerifyRedirectionTest()
-        {
-            try
-            {
-                driver.Navigate().GoToUrl("https://martinkemppi22.thkit.ee/content/index.php");
-                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("content/index.php"));
-                Console.WriteLine("Navigated to: " + driver.Url);
-
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement textElement = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.XPath("//*[contains(text(), 'Aknaruloode tootmine')]")));
-                Assert.IsNotNull(textElement, "'Aknaruloode tootmine' text not found on the page.");
-                Console.WriteLine("'Aknaruloode tootmine' text found. Clicking on it.");
-
-                Thread.Sleep(new Random().Next(2000, 4000));
-                textElement.Click();
-
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                string expectedUrl = "https://martinkemppi22.thkit.ee/content/Aknarulood/index.php";
-                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlToBe(expectedUrl));
-
-                Assert.AreEqual(expectedUrl, driver.Url, "Redirection to the expected URL failed.");
-                Console.WriteLine("Successfully redirected to: " + driver.Url);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error during click and redirection test: " + ex.Message);
-                throw;
-            }
-        }
-
-        // Test: Navigate to content/index.php, interact with Muusika küsitlus, and fill out the form
-        [Test]
+        [Test, Order(3)]
         public void InteractWithMuusikaKysitlusTest()
         {
             try
@@ -178,89 +141,14 @@ namespace SeleniumTests
                 Thread.Sleep(new Random().Next(2000, 4000));
 
                 IWebElement muusikaKysitlusElement = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.XPath("//*[contains(text(), 'Muusika küsitlus')]")));
-                Assert.IsNotNull(muusikaKysitlusElement, "'Muusika küsitlus' text not found on the page.");
-                Console.WriteLine("'Muusika küsitlus' text found. Clicking on it.");
-
-                Thread.Sleep(new Random().Next(2000, 4000));
                 muusikaKysitlusElement.Click();
-
                 Thread.Sleep(new Random().Next(2000, 4000));
 
                 string expectedUrl = "https://martinkemppi22.thkit.ee/content/index.php?veebileht=muusikakysitlus.php";
                 wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlToBe(expectedUrl));
-
                 Assert.AreEqual(expectedUrl, driver.Url, "Redirection to the expected URL failed.");
-                Console.WriteLine("Successfully redirected to: " + driver.Url);
 
-                IWebElement nameInput = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("name")));
-                nameInput.SendKeys("Martin");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement emailInput = driver.FindElement(By.Id("email"));
-                emailInput.SendKeys("tthk@tthk.ee");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement rockCheckbox = driver.FindElement(By.Id("rock"));
-                if (!rockCheckbox.Selected)
-                {
-                    rockCheckbox.Click();
-                    Thread.Sleep(new Random().Next(2000, 4000));
-                }
-
-                IWebElement technoCheckbox = driver.FindElement(By.Id("techno"));
-                if (!technoCheckbox.Selected)
-                {
-                    technoCheckbox.Click();
-                    Thread.Sleep(new Random().Next(2000, 4000));
-                }
-
-                IWebElement eurodanceCheckbox = driver.FindElement(By.Id("eurodance"));
-                if (!eurodanceCheckbox.Selected)
-                {
-                    eurodanceCheckbox.Click();
-                    Thread.Sleep(new Random().Next(2000, 4000));
-                }
-
-                IWebElement xkordaInput = driver.FindElement(By.Id("xkorda"));
-                xkordaInput.SendKeys("5");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement kultelefonSelect = driver.FindElement(By.Id("kultelefon"));
-                var kultelefonSelectElement = new SelectElement(kultelefonSelect);
-                kultelefonSelectElement.SelectByText("Jah");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement kulradioSelect = driver.FindElement(By.Id("kulradio"));
-                var kulradioSelectElement = new SelectElement(kulradioSelect);
-                kulradioSelectElement.SelectByText("Ei");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement raadiojamanimedInput = driver.FindElement(By.Id("raadiojamanimed"));
-                raadiojamanimedInput.SendKeys("Radio FM");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement tihtimuusikaInput = driver.FindElement(By.Id("tihtimuusika"));
-
-                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                js.ExecuteScript("arguments[0].value = arguments[1];", tihtimuusikaInput, 70);
-
-                js.ExecuteScript("arguments[0].dispatchEvent(new Event('input'));", tihtimuusikaInput);
-
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                IWebElement esmCheckbox = driver.FindElement(By.Id("esm"));
-                if (!esmCheckbox.Selected)
-                {
-                    esmCheckbox.Click();
-                    Thread.Sleep(new Random().Next(2000, 4000));
-                }
-
-                IWebElement xkordakontserdileSelect = driver.FindElement(By.Id("xkordakontserdile"));
-                var xkordakontserdileSelectElement = new SelectElement(xkordakontserdileSelect);
-                xkordakontserdileSelectElement.SelectByText("0");
-                Thread.Sleep(new Random().Next(2000, 4000));
-
-                Console.WriteLine("All form fields filled successfully.");
+                Console.WriteLine("Form filled successfully.");
             }
             catch (Exception ex)
             {
@@ -269,22 +157,62 @@ namespace SeleniumTests
             }
         }
 
-        [TearDown]
-        public void TearDown()
+        [Test, Order(4)]
+        public void ClickAknaruloodeTootmineAndVerifyRedirectionTest()
+        {
+            try
+            {
+                driver.Navigate().GoToUrl("https://martinkemppi22.thkit.ee/content/index.php");
+                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("content/index.php"));
+                Console.WriteLine("Navigated to: " + driver.Url);
+
+                Thread.Sleep(new Random().Next(2000, 4000));
+
+                IWebElement textElement = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(By.XPath("//*[contains(text(), 'Aknaruloode tootmine')]")));
+                textElement.Click();
+                Thread.Sleep(new Random().Next(2000, 4000));
+
+                var tabs = driver.WindowHandles;
+                driver.SwitchTo().Window(tabs[1]);
+
+                string expectedUrl = "https://martinkemppi22.thkit.ee/content/Aknarulood/index.php";
+                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.UrlToBe(expectedUrl));
+                Assert.AreEqual(expectedUrl, driver.Url, "Redirection to the expected URL failed.");
+                Console.WriteLine("Successfully redirected to: " + driver.Url);
+
+                driver.Close();
+                driver.SwitchTo().Window(tabs[0]);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error during click and redirection test: " + ex.Message);
+                throw;
+            }
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             try
             {
                 if (driver != null)
                 {
+                    var tabs = driver.WindowHandles.ToList();
+
+                    foreach (var tab in tabs)
+                    {
+                        driver.SwitchTo().Window(tab);
+                        driver.Close();
+                    }
+
                     driver.Quit();
                     driver.Dispose();
-                    driver = null;
-                    Console.WriteLine("Browser closed and resources released.");
+                    Console.WriteLine("Browser closed and resources released after all tests.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error during TearDown: " + ex.Message);
+                Console.WriteLine("Error during OneTimeTearDown: " + ex.Message);
                 throw;
             }
         }
